@@ -1,0 +1,106 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import datetime
+
+df = pd.read_csv("/Users/apple/Desktop/INTERNSHIP/FORECASTING AIR QUALITY/DATA SET/city_day.csv")
+df.info()
+
+  # Remove duplicate rows
+df_cleaned = df.drop_duplicates()
+df_cleaned
+
+# Remove rows with any null values
+df_cleaned = df.dropna()
+df_cleaned
+
+df.columns
+
+df.head()
+df.sort_index()
+
+City_Count = df['City'].value_counts().sort_index()
+City_Count
+
+df.shape
+df.describe().T
+
+# Show null values in the DataFrame
+null_values = df.isnull()
+print(null_values)
+
+# Count the number of null values in each column
+null_counts = df.isnull().sum()
+print(null_counts)
+
+df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+df = df.sort_values(by = 'Date')
+
+df['Date'].min() , df['Date'].max()
+
+sns.set(style="whitegrid")
+ax = sns.countplot(x=df["AQI_Bucket"])
+
+for p in ax.patches:
+    ax.annotate(format(p.get_height(), '.0f'), 
+                (p.get_x() + p.get_width() / 2., p.get_height()), 
+                ha = 'center', va = 'center', 
+                xytext = (0, 9), 
+                textcoords = 'offset points')
+
+# Set plot title and labels
+plt.title("Count of AQI Buckets")
+plt.xlabel("AQI Bucket")
+plt.ylabel("Count")
+
+# Show the plot
+plt.show()
+
+df = df.drop(["AQI_Bucket"],axis=1)
+df
+
+df.head(5)
+
+# We draw boxplots to observe outlier Data
+sns.boxplot(data=df[[ 'PM2.5', 'PM10']])
+sns.boxplot(data=df[['CO','O3']])
+sns.boxplot(data=df[['NO','NO2','NOx']])
+sns.boxplot(data=df[['NH3','SO2']])
+sns.boxplot(data=df[['Benzene','Toluene','Xylene']])
+
+# This function takes a DataFrame as a parameter and identifies outliers for numeric columns in the DataFrame. 
+#It replaces these outliers with the corresponding quartile values ​​(Q1 or Q3). 
+# Outliers are identified using the interquartile range (IQR).
+
+def replace_outliers_with_quartiles(df):
+    
+    for column in df.select_dtypes(include=['number']).columns:   
+        Q1 = df[column].quantile(0.25)
+        Q3 = df[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR 
+        df[column] = df[column].apply(
+            lambda x: Q1 if x < lower_bound else (Q3 if x > upper_bound else x)
+        )
+    
+    return df
+
+df = replace_outliers_with_quartiles(df)
+
+df.describe().T
+sns.boxplot(data=df[['PM2.5','PM10']])
+sns.boxplot(data=df[['NO','NO2','NOx','NH3']])
+sns.boxplot(data=df[['CO','SO2','O3']])
+sns.boxplot(data=df[['Benzene','Toluene','Xylene']])
+df=df.drop(columns=["City"])
+df
+plt.figure(figsize=(12, 8)) 
+sns.heatmap(df.corr(),annot=True) 
+plt.show() 
+
+#Count null values in each column
+null_count = df.isnull().sum()
+print("Null values in each column:")
+print(null_count)
